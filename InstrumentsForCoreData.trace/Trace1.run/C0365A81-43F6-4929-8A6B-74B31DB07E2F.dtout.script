@@ -1,0 +1,181 @@
+
+#pragma D option switchrate=1msec
+#pragma D option bufsize=25m
+#pragma D option stackindent=0
+#pragma D option quiet
+#pragma D option stacksymbols=no
+int AppleProbeSwitch[int];
+syscall::getpriority:entry/execname=="Instruments"/ {AppleProbeSwitch[(int)arg0] = arg1;}
+
+BEGIN{
+AppleProbeSwitch[-1] = 1;
+
+AppleProbeSwitch[-2] = 1;
+
+AppleProbeSwitch[-3] = 1;
+}
+
+/*
+MARKER:0:PROBE
+*/
+
+/*
+MARKER:0:DESCRIPTOR:0
+*/
+CoreData*:CoreData:*:BeginFetch/(AppleProbeSwitch[-1] == 1) && (
+/*
+MARKER:1:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:0:SCRIPT:0
+*/
+self->fetchStart = vtimestamp; 
+/*
+MARKER:0:EVENT:0
+*/
+printf("<e> -1 0 %d %u %-14d\n%s \n</e>\n",cpu, tid, walltimestamp, stringof(copyinstr(arg0)));printf("<s>\n");ustack(128);printf("</s>\n");
+}
+
+/*
+MARKER:0:DESCRIPTOR:1
+*/
+CoreData*:CoreData:*:EndFetch/(AppleProbeSwitch[-1] == 1) && (
+/*
+MARKER:1:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:0:SCRIPT:1
+*/
+self->fetchEnd = (vtimestamp - self-> fetchStart) / 1000; 
+/*
+MARKER:0:EVENT:1
+*/
+printf("<e> -1 1 %d %u %-14d\n%d\n%d \n</e>\n",cpu, tid, walltimestamp, arg0, self->fetchEnd);printf("<s>\n");ustack(128);printf("</s>\n");
+}
+
+/*
+MARKER:1:PROBE
+*/
+
+/*
+MARKER:1:DESCRIPTOR:0
+*/
+CoreData*:CoreData:*:BeginFaultCacheMiss/(AppleProbeSwitch[-2] == 1) && (
+/*
+MARKER:2:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:1:SCRIPT:0
+*/
+self->cacheMissStart = vtimestamp; 
+/*
+MARKER:1:EVENT:0
+*/
+printf("<e> -2 0 %d %u %-14d\n%s \n</e>\n",cpu, tid, walltimestamp, stringof(copyinstr(arg0)));printf("<s>\n");ustack(128);printf("</s>\n");
+}
+
+/*
+MARKER:1:DESCRIPTOR:1
+*/
+CoreData*:CoreData:*:EndFaultCacheMiss/(AppleProbeSwitch[-2] == 1) && (
+/*
+MARKER:2:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:1:SCRIPT:1
+*/
+self->cacheMissEnd = (vtimestamp - self-> cacheMissStart) / 1000; 
+/*
+MARKER:1:EVENT:1
+*/
+printf("<e> -2 1 %d %u %-14d\n%d \n</e>\n",cpu, tid, walltimestamp, self->cacheMissEnd);printf("<s>\n");ustack(128);printf("</s>\n");
+}
+
+/*
+MARKER:1:DESCRIPTOR:2
+*/
+CoreData*:CoreData:*:BeginRelationshipCacheMiss/(AppleProbeSwitch[-2] == 1) && (
+/*
+MARKER:2:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:1:SCRIPT:2
+*/
+self->relationshipCacheMissStart = vtimestamp; 
+/*
+MARKER:1:EVENT:2
+*/
+printf("<e> -2 2 %d %u %-14d\n%s\n%s \n</e>\n",cpu, tid, walltimestamp, stringof(copyinstr(arg0)), stringof(copyinstr(arg1)));printf("<s>\n");ustack(128);printf("</s>\n");
+}
+
+/*
+MARKER:1:DESCRIPTOR:3
+*/
+CoreData*:CoreData:*:EndRelationshipCacheMiss/(AppleProbeSwitch[-2] == 1) && (
+/*
+MARKER:2:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:1:SCRIPT:3
+*/
+self-> relationshipCacheMissEnd= (vtimestamp - self-> relationshipCacheMissStart) / 1000; 
+/*
+MARKER:1:EVENT:3
+*/
+printf("<e> -2 3 %d %u %-14d\n%d \n</e>\n",cpu, tid, walltimestamp, self->relationshipCacheMissEnd);printf("<s>\n");ustack(128);printf("</s>\n");
+}
+
+/*
+MARKER:2:PROBE
+*/
+
+/*
+MARKER:2:DESCRIPTOR:0
+*/
+CoreData*:CoreData:*:BeginSave/(AppleProbeSwitch[-3] == 1) && (
+/*
+MARKER:3:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:2:SCRIPT:0
+*/
+self-> saveStart = vtimestamp; 
+/*
+MARKER:2:EVENT:0
+*/
+}
+
+/*
+MARKER:2:DESCRIPTOR:1
+*/
+CoreData*:CoreData:*:EndSave/(AppleProbeSwitch[-3] == 1) && (
+/*
+MARKER:3:PREDICATE
+*/
+((pid != $pid) && (pid != 20252) && (execname != "dtrace"))
+)/{
+/*
+MARKER:2:SCRIPT:1
+*/
+self->saveEnd = (vtimestamp - self->saveStart) / 1000; 
+/*
+MARKER:2:EVENT:1
+*/
+printf("<e> -3 0 %d %u %-14d\n%d \n</e>\n",cpu, tid, walltimestamp, self->saveEnd);printf("<s>\n");ustack(128);printf("</s>\n");
+}
+
+
